@@ -2,6 +2,7 @@ package com.ideas2it.emailLoggingSystem.service.impl;
 
 import com.ideas2it.emailLoggingSystem.config.ImapConfig;
 import com.ideas2it.emailLoggingSystem.constants.MessageConstants;
+import com.ideas2it.emailLoggingSystem.context.UserContextHolder;
 import com.ideas2it.emailLoggingSystem.dto.EmailLogWithAttachmentsDTO;
 import com.ideas2it.emailLoggingSystem.dto.ResponseResult;
 import com.ideas2it.emailLoggingSystem.entity.Attachment;
@@ -10,7 +11,6 @@ import com.ideas2it.emailLoggingSystem.repository.AttachmentRepository;
 import com.ideas2it.emailLoggingSystem.repository.EmailLogRepository;
 import com.ideas2it.emailLoggingSystem.service.EmailService;
 import com.ideas2it.emailLoggingSystem.service.S3Service;
-import com.ideas2it.emailLoggingSystem.service.UserService;
 import jakarta.annotation.PostConstruct;
 import jakarta.mail.*;
 import jakarta.mail.search.*;
@@ -40,7 +40,6 @@ public class EmailServiceImpl implements EmailService {
     private final ImapConfig imapConfig;
     private Store imapStore;
     private final S3Service s3service;
-    private final UserService userService;
 
     @Autowired
     private EmailLogRepository emailLogRepository;
@@ -50,15 +49,14 @@ public class EmailServiceImpl implements EmailService {
     private Long createdBy;
 
     @Autowired
-    public EmailServiceImpl(ImapConfig imapConfig, S3Service s3service, AttachmentRepository attachmentRepository, UserService userService) {
+    public EmailServiceImpl(ImapConfig imapConfig, S3Service s3service, AttachmentRepository attachmentRepository) {
         this.imapConfig = imapConfig;
         this.s3service = s3service;
         this.attachmentRepository = attachmentRepository;
-        this.userService = userService;
     }
 
     public void setCreatedBy() {
-        this.createdBy = userService.getUserId();  // Populating createdBy with userService's userId
+        this.createdBy = UserContextHolder.getUserId();
     }
     /**
      * initializeImapStore is checking imap config connected or not and data fetched from AWS Security Manager
@@ -102,6 +100,7 @@ public class EmailServiceImpl implements EmailService {
      */
     @Override
     public ResponseResult syncUnreadEmails(Long userId) {
+        logger.info("user context holder getUser: {}", UserContextHolder.getUserId());
         try {
             if (!imapStore.isConnected()) {
                 imapStore.connect(imapConfig.getHost(), imapConfig.getUsername(), imapConfig.getPassword());
