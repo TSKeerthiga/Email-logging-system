@@ -38,6 +38,9 @@ public class EmailLog {
     @Column(name = "mail_receive_date", columnDefinition = "TIMESTAMP")
     private LocalDateTime mailReceiveDate;
 
+    @Column(name="created_by")
+    private Long createdBy;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -50,13 +53,14 @@ public class EmailLog {
     private Set<Attachment> attachments;
 
     // Constructor for initializing email log
-    public EmailLog(String fromEmail, String toEmail, String subject, String body, Date sentDate) {
+    public EmailLog(String fromEmail, String toEmail, String subject, String body, Date sentDate, Long createdBy) {
         this.fromEmail = fromEmail;
         this.toEmail = toEmail;
         this.subject = subject;
         this.body = body;
         // Convert Date to LocalDateTime
         this.mailReceiveDate = convertToLocalDateTime(sentDate);
+        this.createdBy = createdBy;
     }
 
     // Convert java.util.Date to java.time.LocalDateTime
@@ -87,6 +91,7 @@ public class EmailLog {
                 ", subject='" + subject + '\'' +
                 ", body='" + (body != null ? body.substring(0, Math.min(body.length(), 50)) : "") + "..." + '\'' + // truncate body for logging
                 ", mailReceiveDate=" + mailReceiveDate +
+                ", createdBy=" + createdBy +
                 '}';
     }
 }

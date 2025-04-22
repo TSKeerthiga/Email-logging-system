@@ -11,10 +11,10 @@ import java.util.*;
 @Service
 public interface EmailService {
 
-    // Method to fetch emails for a specific date
-    ResponseResult fetchEmails(LocalDate date);
+    /** Fetch unread emails for a specific date */
+    ResponseResult syncUnreadEmails(Long userId);
 
-    // Method to list all email logs
+    /** Retrieve all email logs with attachments */
     List<EmailLogWithAttachmentsDTO> getAllEmailLogsWithAttachments();
 
 }

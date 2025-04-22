@@ -11,15 +11,14 @@ import com.ideas2it.emailLoggingSystem.repository.UsersRepository;
 import com.ideas2it.emailLoggingSystem.security.JwtUtil;
 import com.ideas2it.emailLoggingSystem.security.TokenBlacklist;
 import com.ideas2it.emailLoggingSystem.service.AuthService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
@@ -41,7 +40,9 @@ public class AuthServiceImpl  implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private TokenBlacklist tokenBlacklist;
 
-    public AuthServiceImpl(UsersRepository usersRepository, RoleRepository roleRepository,AuthenticationManager authenticationManager,JwtUtil jwtUtil, PasswordEncoder passwordEncoder, TokenBlacklist tokenBlacklist) {
+    private Long createdBy;
+
+    public AuthServiceImpl(UsersRepository usersRepository, RoleRepository roleRepository, AuthenticationManager authenticationManager, JwtUtil jwtUtil, PasswordEncoder passwordEncoder, TokenBlacklist tokenBlacklist) {
         this.usersRepository = usersRepository;
         this.roleRepository = roleRepository;
         this.authenticationManager = authenticationManager;
@@ -50,15 +51,28 @@ public class AuthServiceImpl  implements AuthService {
         this.tokenBlacklist = tokenBlacklist;
     }
 
+    /**
+     * Registers a new user in the system.
+     *
+     * This method validates the input data, checks if the username already exists,
+     * hashes the password, and assigns roles to the new user. It returns a response
+     * with a success or failure message.
+     *
+     * @param registerRequest The user registration data.
+     * @param bindingResult The result of the validation of the request.
+     * @return A ResponseResult object containing success or failure message.
+     */
     @Override
     public ResponseResult register(RegisterRequest registerRequest, BindingResult bindingResult) {
         try {
-            logger.info("User data received: email={}, username={}, password={}, isActive={}, phone={}",
+//            getCurrentUserId();
+            logger.info("User data received: email={}, username={}, password={}, isActive={}, phone={}, user_id={}",
                     registerRequest.getEmail(),
                     registerRequest.getUsername(),
                     registerRequest.getPassword(),
                     registerRequest.isActive(),
                     registerRequest.getPhoneNumber()
+//                    UserContext.getCurrentUserId()
             );
 
             String validationErrors = fieldValidation(bindingResult);
@@ -73,9 +87,10 @@ public class AuthServiceImpl  implements AuthService {
             Users newUser = new Users();
             newUser.setUsername(registerRequest.getUsername());
             newUser.setPassword(registerRequest.getPassword());
-            newUser.setEmail(registerRequest.getEmail());  // Ensure email is mapped
+            newUser.setEmail(registerRequest.getEmail());
             newUser.setPhoneNumber(registerRequest.getPhoneNumber());
-            newUser.setIsActive(registerRequest.isActive());  // Using the updated "isActive" field
+            newUser.setIsActive(registerRequest.isActive());
+//            newUser.setCreatedBy(UserContext.getCurrentUserId());
 
             String encodedPassword = passwordEncoder.encode(registerRequest.getPassword());
             newUser.setPassword(encodedPassword);
@@ -94,16 +109,31 @@ public class AuthServiceImpl  implements AuthService {
             }
 
             newUser.setRole(roles);
-            usersRepository.save(newUser);
+            try {
+                usersRepository.save(newUser);
+            } catch (Exception e) {
+                logger.error("Error saving user to the database", e);
+                return new ResponseResult(false, MessageConstants.USER_REGISTER_FAILED);
+            }
 
             return new ResponseResult(false, MessageConstants.USER_REGISTER_SUCCESS);
         } catch (Exception e) {
             logger.error("Error during registration", e);
             return new ResponseResult(false, MessageConstants.USER_REGISTER_FAILED);
         }
-//        return new ResponseResult(false, MessageConstants.USER_REGISTER_FAILED);
     }
 
+    /**
+     * Logs a user into the system by authenticating the provided credentials.
+     *
+     * This method validates the login request, authenticates the user using the
+     * provided credentials, and generates a JWT token if authentication is successful.
+     * If authentication fails, an error message is returned.
+     *
+     * @param loginRequest The login credentials provided by the user.
+     * @param bindingResult The result of the validation of the request.
+     * @return A ResponseResult object containing the login token or an error message.
+     */
     @Override
     public ResponseResult login(LoginRequest loginRequest, BindingResult bindingResult) {
         try {
@@ -120,7 +150,7 @@ public class AuthServiceImpl  implements AuthService {
             return new ResponseResult(true, token);
         } catch (BadCredentialsException e) {
             logger.error("Login failed for user {}: Invalid credentials at {}", loginRequest.getUsername(), LocalDateTime.now(), e);
-            return new ResponseResult(false, MessageConstants.INTERNAL_SERVER_ERROR);
+            return new ResponseResult(false, MessageConstants.INVALID_USER_PASSWORD);
 
         } catch (Exception e) {
             logger.error("Login failed for user {}: {} at {}", loginRequest.getUsername(), e.getMessage(), LocalDateTime.now(), e);
@@ -128,23 +158,25 @@ public class AuthServiceImpl  implements AuthService {
         }
     }
 
+    /**
+     * Logs out a user by invalidating the JWT token and clearing the security context.
+     *
+     * This method takes the Authorization header, extracts the token, adds it to
+     * the blacklist, and clears the current user's authentication context.
+     *
+     * @param authHeader The Authorization header containing the JWT token.
+     * @return A ResponseEntity with a success or error message.
+     */
     @Override
-    public ResponseEntity<String> logout(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-
+    public ResponseEntity<String> logout(String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             tokenBlacklist.blacklistToken(token);
-            return ResponseEntity.ok("Logged out and token invalidated.");
+            SecurityContextHolder.clearContext();
+            return ResponseEntity.ok("Logged out and token validated");
         } else {
             return ResponseEntity.badRequest().body("Token not provided");
         }
-    }
-
-    // Helper method to validate email format
-    private boolean isValidEmail(String email) {
-        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";  // Simple email validation regex
-        return email != null && email.matches(emailRegex);
     }
 
     public String fieldValidation(BindingResult bindingResult) {

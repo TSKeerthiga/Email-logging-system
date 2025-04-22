@@ -28,27 +28,23 @@ public class EmailController {
         this.emailLogRepository = emailLogRepository;
     }
 
-    @GetMapping("/fetch")
-    public ResponseEntity<String> fetchEmails(@RequestParam(value = "date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+    /**
+     * Retrieves all email logs along with their associated attachments from the database.
+     *
+     * @return a ResponseEntity containing a list of EmailLogWithAttachmentsDTO objects
+     */
+    @GetMapping("/list/logs")
+    public ResponseEntity<?> getAllEmailLogsWithAttachments() {
         try {
-            // If no date is provided, use today's date
-            if (date == null) {
-                date = LocalDate.now();
-            }
-            ResponseResult responseResult  = emailService.fetchEmails(date);
-            if (!responseResult.isSuccess()) {
-                return ResponseEntity.ok("✅ " + responseResult.getMessage());
-            }
+            List<EmailLogWithAttachmentsDTO> emailLogs = emailService.getAllEmailLogsWithAttachments();
 
-            return ResponseEntity.ok("✅ " + responseResult.getMessage());
+            return ResponseEntity.ok(emailLogs);
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error fetching emails: " + e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("An error occurred while fetching email logs with attachments: " + e.getMessage());
         }
     }
 
-    @GetMapping("/list/logs")
-    public ResponseEntity<List<EmailLogWithAttachmentsDTO>> getAllEmailLogs() {
-        return ResponseEntity.ok(emailService.getAllEmailLogsWithAttachments());
-    }
 }

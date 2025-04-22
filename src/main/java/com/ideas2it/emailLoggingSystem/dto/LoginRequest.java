@@ -20,11 +20,11 @@ import java.util.Set;
 public class LoginRequest {
 
     @NotBlank(message = MessageConstants.USERNAME_EMPTY)
-    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
+    @Size(min = 3, max = 50)
     private String username;
 
     @NotBlank(message = MessageConstants.PASSWORD_EMPTY)
-    @Size(min = 6, max = 100, message = MessageConstants.PASSWORD_TOO_SHORT)
+    @Size(min = 6, max = 100)
     private String password;
 
 }

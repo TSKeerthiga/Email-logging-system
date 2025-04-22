@@ -1,34 +1,58 @@
 package com.ideas2it.emailLoggingSystem.scheduler;
 
 import com.ideas2it.emailLoggingSystem.dto.ResponseResult;
+import com.ideas2it.emailLoggingSystem.model.enums.RoleName;
 import com.ideas2it.emailLoggingSystem.service.EmailService;
-import org.springframework.http.ResponseEntity;
+import com.ideas2it.emailLoggingSystem.repository.UsersRepository;
+import com.ideas2it.emailLoggingSystem.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-
+@Component
 public class EmailFetchScheduler {
+    private static final Logger logger = LoggerFactory.getLogger(EmailFetchScheduler.class);
+
     private final EmailService emailService;
+    private final UsersRepository usersRepository;
+    private final UserService userService;
 
-    public EmailFetchScheduler(EmailService emailService) {
+    public EmailFetchScheduler(EmailService emailService, UsersRepository usersRepository, UserService userService) {
         this.emailService = emailService;
+        this.usersRepository = usersRepository;
+        this.userService = userService;
     }
 
-    // Scheduled to every one hour for day
-    @Scheduled(cron = "0 0 * * * ?")  //  every hour
-    public ResponseEntity<String> fetchEmailsScheduled() {
-        try {
-            LocalDate today = LocalDate.now();
-            System.out.println("Scheduled fetch for emails on: " + today);
-            ResponseResult result = emailService.fetchEmails(today);
-            if (!result.isSuccess()) {
-                return ResponseEntity.ok("✅ " + result.getMessage());
-            }
+    @Scheduled(cron = "0 0 * * * ?") // every 1 hour for testing
+    public void fetchEmailsScheduled() {
+        var schedulerUsers = usersRepository.findByRole_Name("SCHEDULER");
 
-            return ResponseEntity.ok("✅ " + result.getMessage());
-        } catch (Exception e) {
-            System.err.println("Error during scheduled email fetch: " + e.getMessage());
+        if (schedulerUsers.isEmpty()) {
+            logger.info("No users found with role: " + "SCHEDULER");
+            return;
         }
-        return null;
+
+        for (var user : schedulerUsers) {
+            try {
+                Long userId = user.getId();
+                if (currentUserId == userId) {
+                    ResponseResult result = emailService.syncUnreadEmails(userId);
+                    logger.info("userId {}", userId);
+                    if (result.isSuccess()) {
+                        logger.info("User {}: {}", userId, result.getMessage());
+                    } else {
+                        logger.warn("User {}", userId);
+                    }
+                }
+
+
+            } catch (Exception e) {
+                logger.error("User {}: Error during scheduled fetch - {}", user.getId(), e.getMessage());
+            }
+        }
     }
+
 }

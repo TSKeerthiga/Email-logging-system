@@ -19,5 +19,6 @@ public class EmailLogWithAttachmentsDTO {
     private String subject;
     private String body;
     private LocalDateTime mailReceiveDate;
+    private Long createdBy;
     private List<String> attachmentUrls;
 }

@@ -22,33 +22,45 @@ public class AwsConfig {
     @Value("${aws.region}")
     String region;
 
+    /**
+     * Creates and provides a configured instance of the AWS Secrets Manager client.
+     * This client is used to interact with AWS Secrets Manager to retrieve secrets.
+     *
+     * @return a configured instance of SecretsManagerClient
+     */
     @Bean
     public SecretsManagerClient secretsManagerClient() {
         return SecretsManagerClient.builder()
-                .region(Region.of(region))  // Specify the region you're using
+                .region(Region.of(region))
                 .build();
     }
 
+    /**
+     * Retrieves a secret from AWS Secrets Manager and returns it as a String.
+     *
+     * This method uses the AWS SDK to access the Secrets Manager service and fetch
+     * the secret value, which can be used for secure configurations such as database
+     * credentials or API keys.
+     *
+     * @return the secret value retrieved from AWS Secrets Manager
+     */
     @Bean
     public String getSecret() {
         SecretsManagerClient secretsManagerClient = secretsManagerClient();
 
         try {
-            // Creating request to fetch the secret
             GetSecretValueRequest valueRequest = GetSecretValueRequest.builder()
-                    .secretId(secretName)  // Use the secret name
+                    .secretId(secretName)
                     .build();
 
-            // Fetch the secret value
             GetSecretValueResponse valueResponse = secretsManagerClient.getSecretValue(valueRequest);
 
-            // Check if the response contains a string or binary secret
             if (valueResponse.secretString() != null) {
                 logger.info("Successfully retrieved the secret from AWS Secrets Manager.");
-                return valueResponse.secretString(); // Return the secret string
+                return valueResponse.secretString();
             } else {
                 logger.warn("The secret retrieved is in binary format. You may need to handle binary secrets.");
-                return null; // Handle binary secrets here if necessary
+                return null;
             }
 
         } catch (SecretsManagerException e) {

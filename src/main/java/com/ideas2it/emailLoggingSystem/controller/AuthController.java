@@ -15,10 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 //import org.springframework.validation.DefaultMessageSourceResolvable;
 
 import java.util.stream.Collectors;
@@ -36,17 +33,17 @@ public class AuthController {
         this.authService = authService;
     }
 
-    // Register user API
+    /**
+     * Registers a new user.
+     *
+     * Endpoint: POST /register
+     *
+     * @param registerRequest The request body containing user registration info
+     * @param bindingResult   Binding result for validation errors
+     * @return HTTP 200 with status message
+     */
     @PostMapping("/register")
     public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest registerRequest, BindingResult bindingResult) {
-        logger.info("User data received: email={}, username={}, password={}, isActive={}, phone={}",
-                registerRequest.getEmail(),
-                registerRequest.getUsername(),
-                registerRequest.getPassword(),
-                registerRequest.isActive(),
-                registerRequest.getPhoneNumber()
-        );
-
         ResponseResult registerResponse = authService.register(registerRequest, bindingResult);
 
         if (registerResponse.isSuccess()) {
@@ -56,6 +53,15 @@ public class AuthController {
         }
     }
 
+    /**
+     * Login user.
+     *
+     * Endpoint: POST /login
+     *
+     * @param loginRequest The request body containing user registration info
+     * @param bindingResult   Binding result for validation errors
+     * @return HTTP 200 with status message
+     */
     @PostMapping("/login")
     public ResponseEntity<String> login(@Valid @RequestBody LoginRequest loginRequest, BindingResult bindingResult) {
         ResponseResult loginResponse =  authService.login(loginRequest, bindingResult);
@@ -67,10 +73,16 @@ public class AuthController {
         }
     }
 
+    /**
+     * Logout user.
+     *
+     * Endpoint: POST /login
+     *
+     * @param authHeader header The request body containing token info
+     * @return HTTP 200 with status message
+     */
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request) {
-        return this.authService.logout(request);
+    public ResponseEntity<String> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return authService.logout(authHeader);
     }
-
-
 }

@@ -40,7 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        if(token != null && token.startsWith("Bearer ")) {
+        if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
 
             // Check if the token is blacklisted
@@ -51,34 +51,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             try {
-
                 String username = jwtUtil.extractUsername(token);
 
-                if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     List<String> roles = jwtUtil.extractRoles(token);
+                    String userId = String.valueOf(jwtUtil.extractUserId(token));  // Extract user_id from JWT
 
                     List<SimpleGrantedAuthority> authorities = roles.stream()
-                            .map(role -> new SimpleGrantedAuthority("ROLE_"+ role))
+                            .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                             .toList();
 
                     UserDetails userDetails = customUserDetailService.loadUserByUsername(username);
 
-                    if(jwtUtil.isTokenValid(token)) {
+                    if (jwtUtil.isTokenValid(token)) {
                         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails,
                                 null, authorities);
-                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                        // Create the custom authentication details with both WebAuthenticationDetails and userId
+                        CustomAuthDetails customDetails = new CustomAuthDetails(request, userId);
+                        authToken.setDetails(customDetails);
+
+                        // Set the authentication in the SecurityContextHolder
                         SecurityContextHolder.getContext().setAuthentication(authToken);
+                        request.setAttribute("userId", userId);  // You can still store in request for convenience
                     }
                 }
             } catch (Exception e) {
-                return ;
+                return;
             }
         } else {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Authorization header missing or invalid");
             return;
         }
-        filterChain.doFilter(request,response);
-
+        filterChain.doFilter(request, response);
     }
 }

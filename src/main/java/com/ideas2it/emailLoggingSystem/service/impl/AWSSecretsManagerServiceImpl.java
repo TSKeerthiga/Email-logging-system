@@ -23,6 +23,17 @@ public class AWSSecretsManagerServiceImpl implements AWSSecretsManagerService  {
         this.region = region;
     }
 
+    /**
+     * Retrieves AWS credentials from AWS Secrets Manager.
+     *
+     * This method fetches the secret from AWS Secrets Manager, parses the JSON response,
+     * and extracts the AWS access key and secret key. These credentials are then returned
+     * as a {@link BasicAWSCredentials} object, which can be used for AWS SDK interactions.
+     *
+     * @return {@link BasicAWSCredentials} containing the access key and secret key
+     * @throws RuntimeException if there is an error retrieving or parsing the secret from AWS Secrets Manager,
+     *                          or if the access key or secret key is missing in the retrieved secret
+     */
     public BasicAWSCredentials getAWSCredentialsFromSecret() {
         // Initialize the Secrets Manager client
         AWSSecretsManager client = AWSSecretsManagerClientBuilder.standard()

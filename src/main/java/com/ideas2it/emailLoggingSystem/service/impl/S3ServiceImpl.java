@@ -40,6 +40,15 @@ public class S3ServiceImpl implements S3Service {
         this.awsSecretsManagerService = awsSecretsManagerService;
     }
 
+    /**
+     * Initializes the Amazon S3 client using credentials retrieved from AWS Secrets Manager.
+     *
+     * This method uses the {@link AWSSecretsManagerService} to fetch the AWS credentials (access key and secret key)
+     * from the configured Secrets Manager. It then sets up the Amazon S3 client with these credentials,
+     * using the specified AWS region.
+     *
+     * @throws RuntimeException if there is an error initializing the S3 client or fetching the credentials
+     */
     @PostConstruct
     public void initS3Client() {
         try {
@@ -60,6 +69,16 @@ public class S3ServiceImpl implements S3Service {
         }
     }
 
+    /**
+     * Uploads a file to the specified Amazon S3 bucket.
+     *
+     * This method uploads the given {@link File} to the S3 bucket configured in the application properties
+     * under the bucket name. It returns the URL of the uploaded file on success.
+     *
+     * @param file the {@link File} object to be uploaded
+     * @return a {@link String} representing the URL of the uploaded file on S3
+     * @throws RuntimeException if there is an error during the upload process
+     */
     @Override
     public String uploadFile(File file) {
         try {

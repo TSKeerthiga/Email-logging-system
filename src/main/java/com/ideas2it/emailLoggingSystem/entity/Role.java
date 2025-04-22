@@ -25,6 +25,9 @@ public class Role {
     @Column(name = "name", nullable = false, columnDefinition = "VARCHAR(100)")
     private String name;
 
+    @Column(name="created_by")
+    private Long createdBy;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

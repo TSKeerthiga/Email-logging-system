@@ -1,5 +1,7 @@
 package com.ideas2it.emailLoggingSystem.constants;
 
+import software.amazon.awssdk.services.secretsmanager.endpoints.internal.Value;
+
 public class MessageConstants {
     public static final String USER_TAKEN =  "Username is already token";
     public static final String ROLE_EMPTY = "Roles cannot be empty";
@@ -17,4 +19,9 @@ public class MessageConstants {
 
     public static final String INVALID_USER_PASSWORD = "Invalid username or password";
     public static final String INTERNAL_SERVER_ERROR = "Internal server error";
+    public static final String EMAIL_ATTACHMENT_SEND_SUCCESS= "Emails and attachments saved successfully.";
+    public static final String EMAIL_SEND_SUCCESS= "Emails saved successfully.";
+    public static final String EMAIL_NOT_SAVE_ATTACHMENT_SKIP = "Emails not saved. Attachments skipped.";
+    public static final String NO_UNREAD_MAIL = "No new (unread) emails to process.";
+    public static final int CHUNK_SIZE = 10;
 }

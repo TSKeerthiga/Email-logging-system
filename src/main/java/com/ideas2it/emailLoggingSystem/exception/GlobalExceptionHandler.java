@@ -13,6 +13,13 @@ import java.util.stream.Collectors;
 
 public class GlobalExceptionHandler {
 
+    /**
+     * Handles validation errors by extracting the error messages from the FieldErrors
+     * in the MethodArgumentNotValidException and returning a bad request response.
+     *
+     * @param ex the MethodArgumentNotValidException
+     * @return a ResponseEntity containing the validation error messages
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ResponseResult> handleValidation(MethodArgumentNotValidException ex) {
         List<String> error =  ex.getBindingResult().getFieldErrors().stream()
@@ -24,6 +31,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new ResponseResult(false, errorMessage), HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Handles all other types of exceptions by returning an internal server error
+     * with a generic error message.
+     *
+     * @param ex the generic exception
+     * @return a ResponseEntity containing a generic error message
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ResponseResult> handleException(Exception ex) {
         return new ResponseEntity<>(new ResponseResult(false, "An unexpected error occured" + ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
