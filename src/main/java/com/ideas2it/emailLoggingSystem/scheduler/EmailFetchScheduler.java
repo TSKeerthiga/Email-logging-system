@@ -38,7 +38,6 @@ public class EmailFetchScheduler {
         for (var user : schedulerUsers) {
             try {
                 Long userId = user.getId();
-                if (currentUserId == userId) {
                     ResponseResult result = emailService.syncUnreadEmails(userId);
                     logger.info("userId {}", userId);
                     if (result.isSuccess()) {
@@ -46,8 +45,6 @@ public class EmailFetchScheduler {
                     } else {
                         logger.warn("User {}", userId);
                     }
-                }
-
 
             } catch (Exception e) {
                 logger.error("User {}: Error during scheduled fetch - {}", user.getId(), e.getMessage());
